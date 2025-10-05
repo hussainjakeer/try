@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Nearest Neighbors (KNN) Explained</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: #ffffff;
+            --foreground: #252525;
+            --card: #ffffff;
+            --card-foreground: #252525;
+            --muted: #ececf0;
+            --muted-foreground: #717182;
+            --border: rgba(0, 0, 0, 0.1);
+            --radius: 0.625rem;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            line-height: 1.5;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1024px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .space-y-8 > * + * {
+            margin-top: 2rem;
+        }
+
+        .space-y-6 > * + * {
+            margin-top: 1.5rem;
+        }
+
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+
+        .space-y-2 > * + * {
+            margin-top: 0.5rem;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        h4 {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .text-muted {
+            color: var(--muted-foreground);
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .card-padding {
+            padding: 1.5rem;
+        }
+
+        .aspect-video {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+        }
+
+        .aspect-video iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .code-block {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 1rem;
+            border-radius: var(--radius);
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .code-inline {
+            background: var(--muted);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            display: block;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+        }
+
+        .code-inline.mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        ul {
+            list-style: disc;
+            padding-left: 2.5rem;
+        }
+
+        ul li {
+            margin: 0.5rem 0;
+        }
+
+        strong {
+            font-weight: 600;
+        }
+
+        .tabs {
+            width: 100%;
+        }
+
+        .tabs-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.25rem;
+            background: var(--muted);
+            padding: 0.25rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+        }
+
+        .tab-trigger {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: calc(var(--radius) - 2px);
+            transition: background 0.2s;
+        }
+
+        .tab-trigger:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-trigger.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .grid-gap-4 {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--muted-foreground);
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+            }
+
+            .code-block {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container space-y-8">
+        <!-- Header -->
+        <div class="header space-y-4">
+            <h1>K-Nearest Neighbors (KNN) Explained</h1>
+            <p class="text-muted">
+                A comprehensive guide to understanding K-Nearest Neighbors algorithm with mathematical concepts and code examples
+            </p>
+        </div>
+
+        <!-- YouTube Video Embed -->
+        <div class="card">
+            <div class="aspect-video">
+                <iframe
+                    width="100%"
+                    height="100%"
+                    src="https://www.youtube.com/embed/4ObVzTuFivY"
+                    title="K-Nearest Neighbors Tutorial"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                ></iframe>
+            </div>
+        </div>
+
+        <!-- Introduction -->
+        <section class="space-y-4">
+            <h2>What is K-Nearest Neighbors (KNN)?</h2>
+            <p>
+                K-Nearest Neighbors (KNN) is a simple, non-parametric, and lazy learning algorithm used for both classification and regression tasks. It's called "lazy" because it doesn't learn a discriminative function from the training data but instead memorizes the training dataset.
+            </p>
+            <p>
+                The algorithm works by finding the K nearest neighbors to a query point in the feature space and making predictions based on their labels (for classification) or values (for regression).
+            </p>
+        </section>
+
+        <!-- Mathematical Concepts -->
+        <section class="space-y-6">
+            <h2>Mathematical Foundation</h2>
+            
+            <div class="card card-padding space-y-4">
+                <h3>Distance Metrics</h3>
+                <p>
+                    KNN relies on distance metrics to find the nearest neighbors. The most common distance metrics are:
+                </p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h4>Euclidean Distance</h4>
+                        <div class="code-inline">
+                            d(x, y) = √(Σᵢ₌₁ⁿ(xᵢ - yᵢ)²)
+                        </div>
+                        <p style="margin-top: 0.5rem;">Most common distance metric for continuous features.</p>
+                    </div>
+                    
+                    <div>
+                        <h4>Manhattan Distance</h4>
+                        <div class="code-inline">
+                            d(x, y) = Σᵢ₌₁ⁿ|xᵢ - yᵢ|
+                        </div>
+                        <p style="margin-top: 0.5rem;">Sum of absolute differences, less sensitive to outliers.</p>
+                    </div>
+                    
+                    <div>
+                        <h4>Minkowski Distance</h4>
+                        <div class="code-inline">
+                            d(x, y) = (Σᵢ₌₁ⁿ|xᵢ - yᵢ|ᵖ)^(1/p)
+                        </div>
+                        <p style="margin-top: 0.5rem;">Generalization where p=1 gives Manhattan, p=2 gives Euclidean.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-padding space-y-4">
+                <h3>Classification Algorithm</h3>
+                <p>
+                    For classification, KNN predicts the class of a query point by majority voting among its K nearest neighbors:
+                </p>
+                <div class="code-inline">
+                    ŷ = argmaxᵧ Σᵢ₌₁ᵏ I(yᵢ = y)
+                </div>
+                <ul class="space-y-2">
+                    <li><strong>ŷ</strong>: predicted class</li>
+                    <li><strong>yᵢ</strong>: class of the i-th nearest neighbor</li>
+                    <li><strong>I(·)</strong>: indicator function (1 if condition is true, 0 otherwise)</li>
+                    <li><strong>k</strong>: number of nearest neighbors</li>
+                </ul>
+            </div>
+
+            <div class="card card-padding space-y-4">
+                <h3>Regression Algorithm</h3>
+                <p>
+                    For regression, KNN predicts the value by averaging the target values of the K nearest neighbors:
+                </p>
+                <div class="code-inline">
+                    ŷ = (1/k) × Σᵢ₌₁ᵏ yᵢ
+                </div>
+                <p>
+                    For weighted regression (distance-weighted):
+                </p>
+                <div class="code-inline">
+                    ŷ = (Σᵢ₌₁ᵏ wᵢ × yᵢ) / (Σᵢ₌₁ᵏ wᵢ)
+                </div>
+                <p style="margin-top: 0.5rem;">
+                    where wᵢ = 1/d(x, xᵢ) (inverse distance weighting)
+                </p>
+            </div>
+
+            <div class="card card-padding space-y-4">
+                <h3>Algorithm Steps</h3>
+                <ol class="space-y-2" style="padding-left: 2.5rem;">
+                    <li>Choose the number of neighbors K</li>
+                    <li>Calculate the distance between the query point and all training points</li>
+                    <li>Sort the distances and select the K nearest neighbors</li>
+                    <li>For classification: Use majority voting</li>
+                    <li>For regression: Use average or weighted average</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Code Implementation -->
+        <section class="space-y-6">
+            <h2>Code Implementation</h2>
+
+            <div class="tabs">
+                <div class="tabs-list">
+                    <button class="tab-trigger active" onclick="switchTab('python')">Python (NumPy)</button>
+                    <button class="tab-trigger" onclick="switchTab('sklearn')">Scikit-learn</button>
+                </div>
+
+                <div id="python-tab" class="tab-content active space-y-4">
+                    <div class="card card-padding">
+                        <h3>KNN Classification from Scratch</h3>
+                        <p style="margin-bottom: 1rem;">
+                            Let's implement KNN classification using only NumPy:
+                        </p>
+                        <div class="code-block">
+                            <pre><code>import numpy as np
+from collections import Counter
+
+class KNNClassifier:
+    def __init__(self, k=3, distance_metric='euclidean'):
+        """
+        Initialize KNN classifier
+        
+        Parameters:
+        k: Number of nearest neighbors
+        distance_metric: 'euclidean' or 'manhattan'
+        """
+        self.k = k
+        self.distance_metric = distance_metric
+        self.X_train = None
+        self.y_train = None
+    
+    def fit(self, X, y):
+        """
+        Store training data (lazy learning)
+        
+        Parameters:
+        X: Training features (n_samples, n_features)
+        y: Training labels (n_samples,)
+        """
+        self.X_train = np.array(X)
+        self.y_train = np.array(y)
+    
+    def _calculate_distance(self, x1, x2):
+        """Calculate distance between two points"""
+        if self.distance_metric == 'euclidean':
+            return np.sqrt(np.sum((x1 - x2) ** 2))
+        elif self.distance_metric == 'manhattan':
+            return np.sum(np.abs(x1 - x2))
+        else:
+            raise ValueError("Distance metric must be 'euclidean' or 'manhattan'")
+    
+    def _get_neighbors(self, x):
+        """Find k nearest neighbors for a query point"""
+        distances = []
+        
+        for i, x_train in enumerate(self.X_train):
+            dist = self._calculate_distance(x, x_train)
+            distances.append((dist, self.y_train[i]))
+        
+        # Sort by distance and get k nearest
+        distances.sort(key=lambda x: x[0])
+        neighbors = distances[:self.k]
+        
+        return neighbors
+    
+    def predict(self, X):
+        """
+        Make predictions for test data
+        
+        Parameters:
+        X: Test features (n_samples, n_features)
+        
+        Returns:
+        predictions: Predicted labels
+        """
+        predictions = []
+        
+        for x in X:
+            neighbors = self._get_neighbors(x)
+            
+            # Get labels of neighbors
+            neighbor_labels = [neighbor[1] for neighbor in neighbors]
+            
+            # Majority voting
+            most_common = Counter(neighbor_labels).most_common(1)
+            prediction = most_common[0][0]
+            predictions.append(prediction)
+        
+        return np.array(predictions)
+    
+    def predict_proba(self, X):
+        """
+        Predict class probabilities
+        
+        Returns:
+        probabilities: Array of shape (n_samples, n_classes)
+        """
+        predictions = []
+        
+        for x in X:
+            neighbors = self._get_neighbors(x)
+            neighbor_labels = [neighbor[1] for neighbor in neighbors]
+            
+            # Count occurrences of each class
+            label_counts = Counter(neighbor_labels)
+            total_neighbors = len(neighbor_labels)
+            
+            # Calculate probabilities
+            unique_labels = sorted(list(set(self.y_train)))
+            probabilities = []
+            
+            for label in unique_labels:
+                prob = label_counts.get(label, 0) / total_neighbors
+                probabilities.append(prob)
+            
+            predictions.append(probabilities)
+        
+        return np.array(predictions)
+
+# Example usage
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
+
+# Generate sample data
+X, y = make_classification(n_samples=1000, n_features=2, n_redundant=0, 
+                          n_informative=2, n_clusters_per_class=1, random_state=42)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Create and train model
+knn = KNNClassifier(k=5, distance_metric='euclidean')
+knn.fit(X_train, y_train)
+
+# Make predictions
+y_pred = knn.predict(X_test)
+y_proba = knn.predict_proba(X_test)
+
+# Evaluate
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.3f}")
+print(f"Prediction probabilities shape: {y_proba.shape}")</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="card card-padding">
+                        <h3>KNN Regression from Scratch</h3>
+                        <p style="margin-bottom: 1rem;">
+                            Implementation of KNN for regression tasks:
+                        </p>
+                        <div class="code-block">
+                            <pre><code>import numpy as np
+
+class KNNRegressor:
+    def __init__(self, k=3, distance_metric='euclidean', weights='uniform'):
+        """
+        Initialize KNN regressor
+        
+        Parameters:
+        k: Number of nearest neighbors
+        distance_metric: 'euclidean' or 'manhattan'
+        weights: 'uniform' or 'distance'
+        """
+        self.k = k
+        self.distance_metric = distance_metric
+        self.weights = weights
+        self.X_train = None
+        self.y_train = None
+    
+    def fit(self, X, y):
+        """Store training data"""
+        self.X_train = np.array(X)
+        self.y_train = np.array(y)
+    
+    def _calculate_distance(self, x1, x2):
+        """Calculate distance between two points"""
+        if self.distance_metric == 'euclidean':
+            return np.sqrt(np.sum((x1 - x2) ** 2))
+        elif self.distance_metric == 'manhattan':
+            return np.sum(np.abs(x1 - x2))
+        else:
+            raise ValueError("Distance metric must be 'euclidean' or 'manhattan'")
+    
+    def _get_neighbors(self, x):
+        """Find k nearest neighbors for a query point"""
+        distances = []
+        
+        for i, x_train in enumerate(self.X_train):
+            dist = self._calculate_distance(x, x_train)
+            distances.append((dist, self.y_train[i]))
+        
+        # Sort by distance and get k nearest
+        distances.sort(key=lambda x: x[0])
+        neighbors = distances[:self.k]
+        
+        return neighbors
+    
+    def predict(self, X):
+        """
+        Make predictions for test data
+        
+        Parameters:
+        X: Test features (n_samples, n_features)
+        
+        Returns:
+        predictions: Predicted values
+        """
+        predictions = []
+        
+        for x in X:
+            neighbors = self._get_neighbors(x)
+            
+            if self.weights == 'uniform':
+                # Simple average
+                neighbor_values = [neighbor[1] for neighbor in neighbors]
+                prediction = np.mean(neighbor_values)
+            else:
+                # Distance-weighted average
+                weights = []
+                values = []
+                
+                for dist, value in neighbors:
+                    if dist == 0:  # Avoid division by zero
+                        weight = float('inf')
+                    else:
+                        weight = 1.0 / dist
+                    weights.append(weight)
+                    values.append(value)
+                
+                # Weighted average
+                prediction = np.average(values, weights=weights)
+            
+            predictions.append(prediction)
+        
+        return np.array(predictions)
+
+# Example usage
+from sklearn.datasets import make_regression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Generate sample data
+X, y = make_regression(n_samples=1000, n_features=2, noise=0.1, random_state=42)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Create and train model
+knn_reg = KNNRegressor(k=5, distance_metric='euclidean', weights='distance')
+knn_reg.fit(X_train, y_train)
+
+# Make predictions
+y_pred = knn_reg.predict(X_test)
+
+# Evaluate
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print(f"Mean Squared Error: {mse:.3f}")
+print(f"R² Score: {r2:.3f}")</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sklearn-tab" class="tab-content space-y-4">
+                    <div class="card card-padding">
+                        <h3>Using Scikit-learn for Classification</h3>
+                        <p style="margin-bottom: 1rem;">
+                            The most common way to use KNN in practice:
+                        </p>
+                        <div class="code-block">
+                            <pre><code>from sklearn.neighbors import KNeighborsClassifier
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+
+# Load the iris dataset
+iris = load_iris()
+X, y = iris.data, iris.target
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42
+)
+
+# Feature scaling (important for KNN)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Create and train KNN classifier
+knn = KNeighborsClassifier(n_neighbors=3, metric='euclidean', weights='uniform')
+knn.fit(X_train_scaled, y_train)
+
+# Make predictions
+y_pred = knn.predict(X_test_scaled)
+y_pred_proba = knn.predict_proba(X_test_scaled)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.3f}")
+print(f"\nClassification Report:")
+print(classification_report(y_test, y_pred, target_names=iris.target_names))
+print(f"\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+# Cross-validation
+cv_scores = cross_val_score(knn, X_train_scaled, y_train, cv=5)
+print(f"\nCross-validation scores: {cv_scores}")
+print(f"Mean CV score: {cv_scores.mean():.3f} (+/- {cv_scores.std() * 2:.3f})")
+
+# Predict probabilities for new samples
+X_new = np.array([[5.1, 3.5, 1.4, 0.2], [6.2, 3.4, 5.4, 2.3]])
+X_new_scaled = scaler.transform(X_new)
+predictions = knn.predict(X_new_scaled)
+probabilities = knn.predict_proba(X_new_scaled)
+
+print(f"\nNew predictions: {predictions}")
+print(f"Class probabilities: {probabilities}")</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="card card-padding">
+                        <h3>Using Scikit-learn for Regression</h3>
+                        <p style="margin-bottom: 1rem;">
+                            KNN regression with different distance metrics and weights:
+                        </p>
+                        <div class="code-block">
+                            <pre><code>from sklearn.neighbors import KNeighborsRegressor
+from sklearn.datasets import make_regression
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+
+# Generate sample data
+X, y = make_regression(n_samples=1000, n_features=4, noise=0.1, random_state=42)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Feature scaling
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Create KNN regressor
+knn_reg = KNeighborsRegressor(
+    n_neighbors=5, 
+    metric='euclidean', 
+    weights='distance'
+)
+knn_reg.fit(X_train_scaled, y_train)
+
+# Make predictions
+y_pred = knn_reg.predict(X_test_scaled)
+
+# Evaluate the model
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print(f"Mean Squared Error: {mse:.3f}")
+print(f"Root Mean Squared Error: {rmse:.3f}")
+print(f"Mean Absolute Error: {mae:.3f}")
+print(f"R² Score: {r2:.3f}")
+
+# Hyperparameter tuning with GridSearchCV
+param_grid = {
+    'n_neighbors': [3, 5, 7, 9, 11],
+    'metric': ['euclidean', 'manhattan'],
+    'weights': ['uniform', 'distance']
+}
+
+grid_search = GridSearchCV(
+    KNeighborsRegressor(), 
+    param_grid, 
+    cv=5, 
+    scoring='neg_mean_squared_error',
+    n_jobs=-1
+)
+
+grid_search.fit(X_train_scaled, y_train)
+
+print(f"\nBest parameters: {grid_search.best_params_}")
+print(f"Best cross-validation score: {-grid_search.best_score_:.3f}")
+
+# Make predictions with best model
+best_knn = grid_search.best_estimator_
+y_pred_best = best_knn.predict(X_test_scaled)
+best_r2 = r2_score(y_test, y_pred_best)
+print(f"Best model R² score: {best_r2:.3f}")
+
+# Predict for new samples
+X_new = np.array([[1.5, 2.3, 0.8, 1.1], [2.1, 1.8, 1.9, 0.5]])
+X_new_scaled = scaler.transform(X_new)
+predictions = best_knn.predict(X_new_scaled)
+print(f"\nNew predictions: {predictions}")</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Concepts -->
+        <section class="space-y-6">
+            <h2>Key Concepts Explained</h2>
+
+            <div class="grid-gap-4">
+                <div class="card card-padding">
+                    <h3>1. Choosing the Right K Value</h3>
+                    <ul class="space-y-2" style="margin-top: 0.75rem;">
+                        <li><strong>K = 1:</strong> Most sensitive to noise, high variance</li>
+                        <li><strong>Small K:</strong> Low bias, high variance (overfitting)</li>
+                        <li><strong>Large K:</strong> High bias, low variance (underfitting)</li>
+                        <li><strong>Odd K:</strong> Prevents ties in classification</li>
+                        <li><strong>Rule of thumb:</strong> K = √n (where n is number of samples)</li>
+                    </ul>
+                </div>
+
+                <div class="card card-padding">
+                    <h3>2. Distance Metrics Comparison</h3>
+                    <div class="space-y-4" style="margin-top: 0.75rem;">
+                        <div>
+                            <h4>Euclidean Distance</h4>
+                            <p>Best for: Continuous features, when all features have similar scales</p>
+                        </div>
+                        <div>
+                            <h4>Manhattan Distance</h4>
+                            <p>Best for: High-dimensional data, when features have different scales</p>
+                        </div>
+                        <div>
+                            <h4>Cosine Similarity</h4>
+                            <p>Best for: Text data, when magnitude doesn't matter</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-padding">
+                    <h3>3. Advantages of KNN</h3>
+                    <ul class="space-y-2" style="margin-top: 0.75rem;">
+                        <li>Simple to understand and implement</li>
+                        <li>No assumptions about data distribution</li>
+                        <li>Works well for non-linear decision boundaries</li>
+                        <li>Can be used for both classification and regression</li>
+                        <li>No training phase (lazy learning)</li>
+                        <li>Can handle multi-class problems naturally</li>
+                    </ul>
+                </div>
+
+                <div class="card card-padding">
+                    <h3>4. Disadvantages and Limitations</h3>
+                    <ul class="space-y-2" style="margin-top: 0.75rem;">
+                        <li>Computationally expensive for large datasets</li>
+                        <li>Sensitive to irrelevant features</li>
+                        <li>Requires feature scaling</li>
+                        <li>Memory intensive (stores all training data)</li>
+                        <li>Performance degrades with high dimensions</li>
+                        <li>Sensitive to outliers</li>
+                    </ul>
+                </div>
+
+                <div class="card card-padding">
+                    <h3>5. When to Use KNN</h3>
+                    <ul class="space-y-2" style="margin-top: 0.75rem;">
+                        <li>Small to medium-sized datasets</li>
+                        <li>When you need a simple baseline model</li>
+                        <li>Non-linear decision boundaries</li>
+                        <li>Multi-class classification problems</li>
+                        <li>When interpretability is important</li>
+                        <li>As a starting point for more complex algorithms</li>
+                    </ul>
+                </div>
+
+                <div class="card card-padding">
+                    <h3>6. Performance Optimization Tips</h3>
+                    <ul class="space-y-2" style="margin-top: 0.75rem;">
+                        <li><strong>Feature Scaling:</strong> Always normalize or standardize features</li>
+                        <li><strong>Feature Selection:</strong> Remove irrelevant features</li>
+                        <li><strong>Dimensionality Reduction:</strong> Use PCA for high-dimensional data</li>
+                        <li><strong>Cross-validation:</strong> Use CV to find optimal K</li>
+                        <li><strong>Distance Weights:</strong> Use distance-weighted voting</li>
+                        <li><strong>Data Structures:</strong> Use KD-trees or Ball trees for efficiency</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Keep learning and experimenting with K-Nearest Neighbors!</p>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Deactivate all tab triggers
+            const triggers = document.querySelectorAll('.tab-trigger');
+            triggers.forEach(trigger => {
+                trigger.classList.remove('active');
+            });
+
+            // Show selected tab content
+            const selectedContent = document.getElementById(tabName + '-tab');
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+            }
+
+            // Activate clicked trigger
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
